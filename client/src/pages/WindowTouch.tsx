@@ -7,6 +7,9 @@ import { useSharedStateWindow } from '@/hooks/useSharedStateWindow';
 import { useDesktopPointerBroadcast } from '@/hooks/useDesktopPointerBroadcast';
 import type { SharedState } from '@/lib/sharedState';
 
+import { SubsystemShell, StatusChip } from '@/components/SubsystemShell';
+import { ViewportFrame } from '@/components/ViewportFrame';
+
 interface Pulse {
   x: number;
   y: number;
@@ -82,18 +85,21 @@ export default function WindowTouch() {
   }, [stateManager]);
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#02040a] text-fuchsia-50">
-      <header className="shrink-0 border-b border-fuchsia-300/25 bg-[#030914]/92 px-6 py-4">
-        <div className="text-xs uppercase tracking-[0.45em] text-fuchsia-300/70">Haptic Subsystem</div>
-        <h1 className="text-3xl font-black tracking-[0.18em] text-white">TOUCH</h1>
-        <p className="mt-1 text-sm text-fuchsia-100/65">
-          Haptic sense of edges + grab. All six tabs must be open before it can catch the cursor.
-        </p>
-      </header>
-      <canvas ref={canvasRef} className="min-h-0 flex-1 w-full cursor-pointer" />
-      <footer className="shrink-0 border-t border-fuchsia-300/20 bg-[#030914]/95 p-3 font-mono text-[11px] text-fuchsia-50/75">
-        Coupling {Math.round(sharedState.consciousness.coupling * 100)}%
-      </footer>
-    </div>
+    <SubsystemShell
+      accent="fuchsia"
+      role="Haptic Subsystem"
+      title="TOUCH"
+      description="Haptic sense of edges + grab. All six tabs must be open before it can catch the cursor. Click to send pulses."
+      consciousnessLevel={sharedState.consciousness.level}
+      activeWindows={sharedState.consciousness.activeWindows}
+      headerRight={
+        <StatusChip label="Coupling" value={`${Math.round(sharedState.consciousness.coupling * 100)}%`} accent="fuchsia" />
+      }
+      footer="Click anywhere in the viewport to send a haptic pulse to the body"
+    >
+      <ViewportFrame accent="fuchsia" label="Haptic mesh · click to pulse">
+        <canvas ref={canvasRef} className="h-full min-h-[240px] w-full cursor-crosshair" />
+      </ViewportFrame>
+    </SubsystemShell>
   );
 }

@@ -7,6 +7,9 @@ import { useSharedStateWindow } from '@/hooks/useSharedStateWindow';
 import { useDesktopPointerBroadcast } from '@/hooks/useDesktopPointerBroadcast';
 import type { EmotionalState, SharedState } from '@/lib/sharedState';
 
+import { SubsystemShell, StatusChip } from '@/components/SubsystemShell';
+import { ViewportFrame } from '@/components/ViewportFrame';
+
 const MOOD_COLORS: Record<EmotionalState, string> = {
   curious: '#16f4ff',
   happy: '#fff36a',
@@ -85,18 +88,21 @@ export default function WindowEmotion() {
   }, []);
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#02040a] text-pink-50">
-      <header className="shrink-0 border-b border-pink-300/25 bg-[#030914]/92 px-6 py-4">
-        <div className="text-xs uppercase tracking-[0.45em] text-pink-300/70">Affect Subsystem</div>
-        <h1 className="text-3xl font-black tracking-[0.18em] text-white">EMOTION</h1>
-        <p className="mt-1 text-sm text-pink-100/65">
-          Motivation and speed. Missing Emotion leaves the body sluggish; jumps are weaker until this pane is open.
-        </p>
-      </header>
-      <canvas ref={canvasRef} className="min-h-0 flex-1 w-full" />
-      <footer className="shrink-0 border-t border-pink-300/20 bg-[#030914]/95 p-3 font-mono text-[11px] text-pink-50/75">
-        {sharedState.consciousness.description} · {sharedState.consciousness.activeWindows.length} windows active
-      </footer>
-    </div>
+    <SubsystemShell
+      accent="pink"
+      role="Affect Subsystem"
+      title="EMOTION"
+      description="Motivation and speed. Missing Emotion leaves the body sluggish; jumps are weaker until this pane is open."
+      consciousnessLevel={sharedState.consciousness.level}
+      activeWindows={sharedState.consciousness.activeWindows}
+      headerRight={
+        <StatusChip label="Energy" value={`${Math.round(sharedState.creature.energy)}%`} accent="pink" />
+      }
+      footer={`${sharedState.consciousness.description} · Mood ${sharedState.creature.emotionalState}`}
+    >
+      <ViewportFrame accent="pink" label="Affect field · mood resonance">
+        <canvas ref={canvasRef} className="h-full min-h-[240px] w-full" />
+      </ViewportFrame>
+    </SubsystemShell>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { useSharedStateWindow } from '@/hooks/useSharedStateWindow';
 import { useDesktopPointerBroadcast } from '@/hooks/useDesktopPointerBroadcast';
 import { SubsystemShell, StatusChip } from '@/components/SubsystemShell';
+import { ViewportFrame } from '@/components/ViewportFrame';
 import type { SharedState } from '@/lib/sharedState';
 
 interface Ray {
@@ -126,10 +127,14 @@ export default function WindowVision() {
           you across the desktop.
         </>
       }
+      consciousnessLevel={sharedState.consciousness.level}
+      activeWindows={sharedState.consciousness.activeWindows}
       headerRight={<StatusChip label="Consciousness" value={`${sharedState.consciousness.level}/6`} accent="sky" />}
       footer={`Coupling ${Math.round(coupling * 100)}% · Perception rays follow your pointer`}
     >
-      <canvas ref={canvasRef} className="h-full w-full cursor-crosshair" />
+      <ViewportFrame accent="sky" label="Optic feed · pointer tracking">
+        <canvas ref={canvasRef} className="h-full min-h-[240px] w-full cursor-crosshair" />
+      </ViewportFrame>
     </SubsystemShell>
   );
 }

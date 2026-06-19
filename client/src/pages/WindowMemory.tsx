@@ -5,6 +5,8 @@
 import { useEffect, useRef } from 'react';
 import { useSharedStateWindow } from '@/hooks/useSharedStateWindow';
 import { useDesktopPointerBroadcast } from '@/hooks/useDesktopPointerBroadcast';
+import { SubsystemShell, StatusChip } from '@/components/SubsystemShell';
+import { ViewportFrame } from '@/components/ViewportFrame';
 import type { SharedState } from '@/lib/sharedState';
 
 const PATH_COLORS: Record<string, string> = {
@@ -92,18 +94,19 @@ export default function WindowMemory() {
   const dangers = sharedState.memory.paths.filter((p) => p.type === 'danger').length;
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#02040a] text-emerald-50">
-      <header className="shrink-0 border-b border-emerald-300/25 bg-[#030914]/92 px-6 py-4">
-        <div className="text-xs uppercase tracking-[0.45em] text-emerald-300/70">Recall Subsystem</div>
-        <h1 className="text-3xl font-black tracking-[0.18em] text-white">MEMORY</h1>
-        <p className="mt-1 text-sm text-emerald-100/65">
-          Records paths and danger zones. Without this pane the body cannot learn jumps or avoid mistakes.
-        </p>
-      </header>
-      <canvas ref={canvasRef} className="min-h-0 flex-1 w-full" />
-      <footer className="shrink-0 border-t border-emerald-300/20 bg-[#030914]/95 p-3 font-mono text-[11px] text-emerald-50/75">
-        {sharedState.memory.paths.length} paths · {dangers} danger zones · Coupling {Math.round(sharedState.consciousness.coupling * 100)}%
-      </footer>
-    </div>
+    <SubsystemShell
+      accent="emerald"
+      role="Recall Subsystem"
+      title="MEMORY"
+      description="Records paths and danger zones. Without this pane the body cannot learn jumps or avoid mistakes."
+      consciousnessLevel={sharedState.consciousness.level}
+      activeWindows={sharedState.consciousness.activeWindows}
+      headerRight={<StatusChip label="Paths" value={sharedState.memory.paths.length} accent="emerald" />}
+      footer={`${dangers} danger zones · Coupling ${Math.round(sharedState.consciousness.coupling * 100)}%`}
+    >
+      <ViewportFrame accent="emerald" label="Recall map · path history">
+        <canvas ref={canvasRef} className="h-full min-h-[240px] w-full" />
+      </ViewportFrame>
+    </SubsystemShell>
   );
 }

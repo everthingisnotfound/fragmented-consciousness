@@ -15,6 +15,7 @@ import {
 } from '@/lib/creatureBrain';
 import { computePlayBounds, isTargetBeyondBounds, normToRender } from '@/lib/playSpace';
 import { Pill, StatusChip, SubsystemShell } from '@/components/SubsystemShell';
+import { ViewportFrame } from '@/components/ViewportFrame';
 import {
   isInsideContainer,
   mapPaneNormToContainer,
@@ -402,6 +403,8 @@ export default function WindowBody() {
           </>
         ) : undefined
       }
+      consciousnessLevel={sharedState.consciousness.level}
+      activeWindows={sharedState.consciousness.activeWindows}
       footer={
         <>
           {hud.mode} · {hud.hint} · Jump {hud.jump}% · Edges {hud.walls}% · Catches {hud.grabs}
@@ -409,11 +412,11 @@ export default function WindowBody() {
         </>
       }
     >
-      <div
-        ref={containerRef}
-        className={`relative h-full w-full overflow-hidden ${grabbed ? 'cursor-none' : 'cursor-default'}`}
-      >
-        <div className="pointer-events-none absolute inset-3 rounded-2xl ring-1 ring-cyan-400/10" />
+      <ViewportFrame accent="cyan" label="Somatic viewport · 3D pursuit field">
+        <div
+          ref={containerRef}
+          className={`relative h-full min-h-[280px] w-full overflow-hidden ${grabbed ? 'cursor-none' : 'cursor-default'}`}
+        >
         {!modelReady && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div className="animate-pulse font-mono text-sm text-cyan-300/80">Loading humanoid…</div>
@@ -436,7 +439,8 @@ export default function WindowBody() {
             Cursor in range — lunging…
           </div>
         )}
-      </div>
+        </div>
+      </ViewportFrame>
     </SubsystemShell>
   );
 }

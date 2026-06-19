@@ -5,6 +5,8 @@
 import { useEffect, useRef } from 'react';
 import { useSharedStateWindow } from '@/hooks/useSharedStateWindow';
 import { useDesktopPointerBroadcast } from '@/hooks/useDesktopPointerBroadcast';
+import { SubsystemShell, StatusChip } from '@/components/SubsystemShell';
+import { ViewportFrame } from '@/components/ViewportFrame';
 import type { SharedState } from '@/lib/sharedState';
 
 interface Ripple {
@@ -83,18 +85,25 @@ export default function WindowHearing() {
   }, [stateManager]);
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#02040a] text-amber-50">
-      <header className="shrink-0 border-b border-amber-300/25 bg-[#030914]/92 px-6 py-4">
-        <div className="text-xs uppercase tracking-[0.45em] text-amber-300/70">Audio Subsystem</div>
-        <h1 className="text-3xl font-black tracking-[0.18em] text-white">HEARING</h1>
-        <p className="mt-1 text-sm text-amber-100/65">
-          Sound beyond the tab edge. With Memory open, helps the body nudge the window when the cursor is out of reach.
-        </p>
-      </header>
-      <canvas ref={canvasRef} className="min-h-0 flex-1 w-full cursor-pointer" />
-      <footer className="shrink-0 border-t border-amber-300/20 bg-[#030914]/95 p-3 font-mono text-[11px] text-amber-50/75">
-        Emotion: {sharedState.creature.emotionalState} · Coupling {Math.round(sharedState.consciousness.coupling * 100)}%
-      </footer>
-    </div>
+    <SubsystemShell
+      accent="amber"
+      role="Audio Subsystem"
+      title="HEARING"
+      description="Sound beyond the tab edge. With Memory open, helps the body nudge the window when the cursor is out of reach."
+      consciousnessLevel={sharedState.consciousness.level}
+      activeWindows={sharedState.consciousness.activeWindows}
+      headerRight={
+        <StatusChip
+          label="Coupling"
+          value={`${Math.round(sharedState.consciousness.coupling * 100)}%`}
+          accent="amber"
+        />
+      }
+      footer={`Emotion: ${sharedState.creature.emotionalState} · Click to emit sound ripples`}
+    >
+      <ViewportFrame accent="amber" label="Audio field · click for ripples">
+        <canvas ref={canvasRef} className="h-full min-h-[240px] w-full cursor-crosshair" />
+      </ViewportFrame>
+    </SubsystemShell>
   );
 }

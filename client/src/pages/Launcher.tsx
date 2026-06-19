@@ -3,9 +3,12 @@
  */
 
 import { Button } from '@/components/ui/button';
+import { ConsciousnessRail } from '@/components/ConsciousnessRail';
+import { useSharedStateSnapshot } from '@/hooks/useSharedStateSnapshot';
 import { useRef, useState } from 'react';
 import { useDesktopPointerBroadcast } from '@/hooks/useDesktopPointerBroadcast';
 import { getSharedState } from '@/lib/sharedState';
+import type { WindowType } from '@/lib/sharedState';
 
 interface CognitiveWindow {
   id: string;
@@ -78,113 +81,201 @@ const accentCard: Record<string, string> = {
 
 export default function Launcher() {
   const [openedWindows, setOpenedWindows] = useState<Set<string>>(new Set());
+  const [blockedCount, setBlockedCount] = useState(0);
   const pointerHubRef = useRef(getSharedState());
   useDesktopPointerBroadcast(pointerHubRef.current);
+  const live = useSharedStateSnapshot();
+  const activeSet = new Set(live.consciousness.activeWindows);
 
-  const openWindow = (windowId: string, left = 120, top = 90, width = 720, height = 520) => {
+  const openWindow = (windowId: string, left = 120, top = 90, width = 720, height = 520): boolean => {
     const target = windows.find((item) => item.id === windowId);
-    if (!target) return;
+    if (!target) return false;
 
-    window.open(
+    const popup = window.open(
       target.path,
-      `fragmented-${target.id}-${Date.now()}`,
+      `fragmented-${target.id}`,
       `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no`,
     );
+
+    if (!popup || popup.closed) {
+      setBlockedCount((n) => n + 1);
+      return false;
+    }
+
     setOpenedWindows((prev) => new Set(Array.from(prev).concat(windowId)));
+    setBlockedCount(0);
+    return true;
+  };
+
+  const openMany = (items: Array<{ id: string; left: number; top: number; width: number; height: number }>) => {
+    let opened = 0;
+    let blocked = 0;
+    const next = new Set(openedWindows);
+
+    // Must run synchronously inside the click handler — setTimeout loses user-gesture trust.
+    for (const item of items) {
+      const target = windows.find((w) => w.id === item.id);
+      if (!target) continue;
+      const popup = window.open(
+        target.path,
+        `fragmented-${item.id}`,
+        `width=${item.width},height=${item.height},left=${item.left},top=${item.top},menubar=no,toolbar=no,location=no`,
+      );
+      if (!popup || popup.closed) {
+        blocked += 1;
+      } else {
+        opened += 1;
+        next.add(item.id);
+      }
+    }
+
+    setOpenedWindows(next);
+    setBlockedCount(blocked);
+    return { opened, blocked };
   };
 
   const openDemo = () => {
-    openWindow('body', 80, 60, 900, 640);
-    setTimeout(() => openWindow('vision', 820, 60, 720, 520), 300);
-    setTimeout(() => openWindow('memory', 80, 600, 480, 380), 600);
+    openMany([
+      { id: 'body', left: 80, top: 60, width: 900, height: 640 },
+      { id: 'vision', left: 820, top: 60, width: 720, height: 520 },
+      { id: 'memory', left: 80, top: 600, width: 480, height: 380 },
+    ]);
   };
 
   const openAllWindows = () => {
-    windows.forEach((item, index) => {
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      setTimeout(() => openWindow(item.id, 60 + col * 640, 50 + row * 400, 620, 380), index * 200);
-    });
+    openMany(
+      windows.map((item, index) => {
+        const col = index % 3;
+        const row = Math.floor(index / 3);
+        return { id: item.id, left: 60 + col * 640, top: 50 + row * 400, width: 620, height: 380 };
+      }),
+    );
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#04060f] text-slate-100">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_15%_0%,rgba(22,244,255,0.09),transparent_50%),radial-gradient(ellipse_at_85%_100%,rgba(139,92,246,0.12),transparent_45%)]" />
-      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:48px_48px]" />
+    <div className="immersion-root relative min-h-screen overflow-hidden bg-[#030508] text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-20%,rgba(34,211,238,0.12),transparent_55%),radial-gradient(ellipse_50%_40%_at_100%_80%,rgba(139,92,246,0.14),transparent_50%)]" />
+      <div className="immersion-noise pointer-events-none absolute inset-0 opacity-[0.04]" />
+      <div className="immersion-grid pointer-events-none absolute inset-0" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#030508_75%)]" />
 
-      <div className="relative z-10 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-12 lg:flex-row lg:items-end lg:justify-between">
+      {/* Hero */}
+      <div className="relative z-10 border-b border-white/[0.06] px-6 py-10 backdrop-blur-sm lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <div className="text-[10px] font-medium uppercase tracking-[0.6em] text-cyan-300/80">Distributed Cognition</div>
-            <h1 className="mt-4 bg-gradient-to-r from-white via-cyan-100 to-violet-200 bg-clip-text text-5xl font-black tracking-[0.06em] text-transparent md:text-6xl">
-              FRAGMENTED CONSCIOUSNESS
+            <p className="font-mono text-[10px] uppercase tracking-[0.65em] text-cyan-400/80">◈ Distributed cognition protocol</p>
+            <h1 className="immersion-hero-glow mt-3 text-4xl font-black uppercase tracking-[0.08em] text-white md:text-6xl">
+              Fragmented
+              <span className="block bg-gradient-to-r from-cyan-300 via-violet-200 to-fuchsia-300 bg-clip-text text-transparent">
+                Consciousness
+              </span>
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300/80">
-              Open all <strong className="text-white">six panes</strong> for full pursuit and capture. Your mouse on
-              this launcher steers the body too. At the edge of its world it <strong className="text-cyan-200">pushes
-              the window toward you</strong>, then lunges when your cursor enters the pane.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">
+              One mind, six windows. Each pane is a sense — open them all and the body wakes up. Your cursor on this
+              page <strong className="text-slate-200">feeds the nervous system</strong> in real time.
             </p>
+            <div className="mt-6 rounded-lg border border-white/[0.06] bg-black/40 px-4 py-3 backdrop-blur-md">
+              <ConsciousnessRail
+                active={live.consciousness.activeWindows}
+                level={live.consciousness.level}
+                accent="cyan"
+              />
+              <p className="mt-2 font-mono text-[10px] text-slate-500">
+                Status: <span className="text-cyan-300/90">{live.consciousness.description}</span>
+                {live.consciousness.level > 0 && (
+                  <span className="text-slate-600"> · Arrangement {live.consciousness.arrangement}</span>
+                )}
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 lg:justify-end">
-            <Button
-              onClick={() => openWindow('body', 100, 80, 900, 640)}
-              className="rounded-2xl bg-gradient-to-br from-cyan-500/25 to-cyan-600/10 px-7 py-6 font-bold uppercase tracking-[0.16em] text-white ring-1 ring-cyan-400/30 hover:from-cyan-500/35"
-            >
-              Open Body
-            </Button>
-            <Button
-              onClick={openDemo}
-              className="rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-violet-600/10 px-7 py-6 font-bold uppercase tracking-[0.16em] text-fuchsia-50 ring-1 ring-fuchsia-400/25 hover:from-fuchsia-500/30"
-            >
-              3-Window Demo
-            </Button>
-            <Button
-              onClick={openAllWindows}
-              className="rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-600/10 px-7 py-6 font-bold uppercase tracking-[0.16em] text-emerald-50 ring-1 ring-emerald-400/25 hover:from-emerald-500/30"
-            >
-              Open All Panes
-            </Button>
+          <div className="flex flex-col gap-3 lg:items-end">
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => openWindow('body', 100, 80, 900, 640)}
+                className="rounded-lg bg-cyan-500/15 px-7 py-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-cyan-100 ring-1 ring-cyan-400/30 hover:bg-cyan-500/25"
+              >
+                ◈ Open Body
+              </Button>
+              <Button
+                onClick={openDemo}
+                className="rounded-lg bg-fuchsia-500/10 px-7 py-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-100 ring-1 ring-fuchsia-400/25 hover:bg-fuchsia-500/20"
+              >
+                3-Window Demo
+              </Button>
+              <Button
+                onClick={openAllWindows}
+                className="rounded-lg bg-emerald-500/10 px-7 py-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-emerald-100 ring-1 ring-emerald-400/25 hover:bg-emerald-500/20"
+              >
+                Open All Panes
+              </Button>
+            </div>
+            {blockedCount > 0 && (
+              <div className="max-w-md rounded-lg border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                <strong>Popups blocked ({blockedCount}).</strong> Allow popups for this site, then retry — or use{' '}
+                <strong>Open tab ↗</strong> on each card.
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-4">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {windows.map((item, index) => (
-            <section
-              key={item.id}
-              className={`rounded-2xl bg-gradient-to-br p-6 ring-1 ring-inset backdrop-blur-md transition ${accentCard[item.accent]}`}
-            >
-              <div className="text-[10px] uppercase tracking-[0.42em] text-slate-400">{item.role}</div>
-              <h2 className="mt-2 text-3xl font-black tracking-[0.18em] text-white">{item.name}</h2>
-              <p className="mt-3 min-h-16 text-sm leading-6 text-slate-300/70">{item.description}</p>
-              <Button
-                onClick={() => openWindow(item.id, 100 + index * 40, 80 + index * 30, 720, 520)}
-                className="mt-5 rounded-xl bg-white/[0.06] px-4 py-5 text-xs font-bold uppercase tracking-[0.2em] text-slate-100 ring-1 ring-white/10 hover:bg-white/[0.12]"
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-8 lg:px-10">
+        <p className="mb-5 font-mono text-[9px] uppercase tracking-[0.4em] text-slate-600">Subsystem matrix</p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {windows.map((item, index) => {
+            const online = activeSet.has(item.id as WindowType);
+            return (
+              <section
+                key={item.id}
+                className={`group relative overflow-hidden rounded-lg border p-5 backdrop-blur-md transition-all duration-500 ${
+                  online
+                    ? `${accentCard[item.accent]} immersion-pulse border-white/10 bg-white/[0.04]`
+                    : `${accentCard[item.accent]} border-white/[0.04] bg-black/30 opacity-80 hover:opacity-100`
+                }`}
               >
-                Open Pane
-              </Button>
-            </section>
-          ))}
+                {online && (
+                  <div className="absolute right-3 top-3 flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-wider text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 immersion-pulse" />
+                    Online
+                  </div>
+                )}
+                <div className="font-mono text-[9px] uppercase tracking-[0.45em] text-slate-500">{item.role}</div>
+                <h2 className="mt-2 text-2xl font-black uppercase tracking-[0.2em] text-white">{item.name}</h2>
+                <p className="mt-2 min-h-14 text-sm leading-relaxed text-slate-400">{item.description}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => openWindow(item.id, 100 + index * 40, 80 + index * 30, 720, 520)}
+                    className="rounded-md bg-white/[0.06] px-4 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-slate-100 ring-1 ring-white/10 hover:bg-white/[0.12]"
+                  >
+                    Open pane
+                  </Button>
+                  <a
+                    href={item.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-md bg-white/[0.03] px-4 py-4 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 ring-1 ring-white/8 hover:bg-white/[0.08]"
+                  >
+                    Open tab ↗
+                  </a>
+                </div>
+              </section>
+            );
+          })}
         </div>
 
-        <section className="mt-10 rounded-2xl bg-white/[0.03] p-6 text-sm leading-7 text-slate-300/80 ring-1 ring-white/10 backdrop-blur-md">
-          <h3 className="font-bold uppercase tracking-[0.28em] text-cyan-200/90">How to use</h3>
-          <ol className="mt-3 list-decimal space-y-2 pl-5">
-            <li>
-              Use <strong>Open All Panes</strong> — partial setups (3/6) stay slow and confused.
-            </li>
-            <li>
-              Move your mouse on the launcher or any pane — the body tracks globally once <strong>Vision</strong> is open.
-            </li>
-            <li>
-              When your cursor is outside the Body window, it runs to the edge and pushes the tab toward you.
-            </li>
-            <li>Once your cursor enters the Body pane, it lunges to capture (needs Touch + 6/6).</li>
+        <section className="mt-10 rounded-lg border border-white/[0.06] bg-black/40 p-6 backdrop-blur-md">
+          <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-cyan-400/80">Boot sequence</h3>
+          <ol className="mt-4 space-y-2 font-mono text-xs text-slate-400">
+            <li><span className="text-cyan-500/70">01</span> — Open all six panes (popups or tabs)</li>
+            <li><span className="text-cyan-500/70">02</span> — Watch the neural link fill in above</li>
+            <li><span className="text-cyan-500/70">03</span> — Move mouse anywhere; Body chases once Vision is online</li>
+            <li><span className="text-cyan-500/70">04</span> — At 6/6 the body can push its window and grab your cursor</li>
           </ol>
           {openedWindows.size > 0 && (
-            <p className="mt-4 text-cyan-300/70">Opened this session: {Array.from(openedWindows).join(', ')}</p>
+            <p className="mt-4 font-mono text-[10px] text-cyan-400/70">
+              Popups this session: {Array.from(openedWindows).join(', ')}
+            </p>
           )}
         </section>
       </main>

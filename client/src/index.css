@@ -174,4 +174,65 @@
       max-width: 1280px; /* Standard content width */
     }
   }
+
+  /* —— Fragmented Consciousness immersion layer —— */
+  .immersion-root {
+    font-feature-settings: "ss01", "cv01";
+  }
+
+  .immersion-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black, transparent);
+  }
+
+  .immersion-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .immersion-pulse {
+    animation: immersion-pulse 2.4s ease-in-out infinite;
+  }
+
+  .immersion-scanline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.5), transparent);
+    animation: immersion-scan 4s linear infinite;
+  }
+
+  .immersion-float {
+    animation: immersion-float 8s ease-in-out infinite;
+  }
+
+  .immersion-hero-glow {
+    animation: immersion-hero-glow 6s ease-in-out infinite;
+  }
+
+  @keyframes immersion-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.92); }
+  }
+
+  @keyframes immersion-scan {
+    0% { top: -2px; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  @keyframes immersion-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes immersion-hero-glow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.75; }
+  }
 }
