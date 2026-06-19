@@ -13,7 +13,8 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
-    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "https://fragmented-consciousness.vercel.app/",
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./client/src/*"],
